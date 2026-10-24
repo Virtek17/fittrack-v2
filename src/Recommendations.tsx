@@ -1,3 +1,4 @@
+import { Button } from 'pixel-retroui'
 import { useEffect, useRef, useState } from 'react'
 import { buildAnalysis, GOALS, validProfile, validReport } from '../shared/analysis.js'
 import type { AnalysisProfile, AnalysisReport } from '../shared/analysis.js'
@@ -63,7 +64,7 @@ export default function Recommendations({ data, onProfileChange, authenticated }
         {!hasData && <p className="note">Для разбора добавьте завершённую тренировку или импортируйте питание за выбранный период.</p>}
         {!authenticated && <p className="ai-warning">Для получения разбора откройте приложение из Telegram-бота и дождитесь входа.</p>}
         <label className="ai-consent"><input type="checkbox" checked={consent} disabled={busy} onChange={e => setConsent(e.target.checked)} /><span>Разрешаю отправить сводку в OpenRouter и выбранному поставщику модели. Она включает цель, указанный вес тела, показатели упражнений и средние нутриенты. Имя и Telegram ID в сводку не входят. Поставщик может временно хранить запрос по своим правилам.</span></label>
-        <button className="primary wide" disabled={busy || !authenticated || !consent || !hasData || !summary || endDate > today()} onClick={() => void generate()}>{busy ? 'Создаём разбор…' : current ? 'Разбор уже сохранён' : 'Получить рекомендации'}</button>
+        <Button className="primary wide" disabled={busy || !authenticated || !consent || !hasData || !summary || endDate > today()} onClick={() => void generate()}>{busy ? 'Создаём разбор…' : current ? 'Разбор уже сохранён' : 'Получить рекомендации'}</Button>
         <p className="note">До 2 новых запросов за сутки UTC, включая неудачные попытки. Сохранённые результаты доступны повторно без расхода квоты.</p>
       </section>
       {saved && !current && <div className="notice">Параметры или данные отличаются от прошлого разбора. Для актуальных рекомендаций создайте новый.</div>}
