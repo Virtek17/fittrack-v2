@@ -9,9 +9,11 @@ import { sameDiary } from '../shared/same-diary.js'
 import './App.css'
 import Recommendations from './Recommendations'
 
-type IconName = 'workout' | 'template' | 'history' | 'food' | 'analysis' | 'plus' | 'arrow' | 'check' | 'copy' | 'trash' | 'upload' | 'edit' | 'close'
+type IconName = 'workout' | 'template' | 'history' | 'food' | 'analysis' | 'plus' | 'arrow' | 'check' | 'copy' | 'trash' | 'upload' | 'edit' | 'close' | 'sun' | 'moon'
 function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
+    sun: <><rect x="8" y="8" width="8" height="8" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2" /></>,
+    moon: <path d="M19 15h-5v-3h-3V7h2V3H9v2H6v3H4v8h2v3h3v2h8v-2h3v-4Z" />,
     analysis: <><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z" /></>,
     workout: <><path d="M6 5v14M3 8v8M18 5v14M21 8v8M6 12h12" /></>,
     template: <><rect x="5" y="4" width="14" height="17" rx="3" /><path d="M9 3h6v4H9zM9 12h6M9 16h4" /></>,
@@ -37,6 +39,13 @@ function initialState(): { data: Data; error: string } {
 function Macros({ day }: { day: NutritionDay }) { return <div className="nutrition-mini">{[['protein', 'Белки, г'], ['fat', 'Жиры, г'], ['carbs', 'Углеводы, г']].map(([key, title]) => <div key={key}><b>{fmt(day.nutrients[key])}</b><span>{title}</span></div>)}</div> }
 
 export default function App() {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    try { localStorage.setItem('fittrack.theme', theme) } catch { /* Theme still works without browser storage. */ }
+    const color = theme === 'dark' ? '#191b24' : '#f5f1e5'
+    tg()?.setHeaderColor?.(color); tg()?.setBackgroundColor?.(color)
+  }, [theme])
   const [initial] = useState(initialState)
   const [data, setData] = useState<Data>(initial.data)
   const [storageError, setStorageError] = useState(initial.error)
@@ -57,7 +66,7 @@ export default function App() {
   const rememberRevision = (value: number) => { revision.current = value; try { localStorage.setItem(`${storageKey()}.revision`, String(value)) } catch { /* The next session will ask to reload the cloud copy. */ } }
   const dataRef = useRef(data)
   useEffect(() => { dataRef.current = data; if (storageBlocked) return; try { localStorage.setItem(storageKey(), JSON.stringify(data)); } catch { queueMicrotask(() => setStorageError('Не удалось сохранить на устройстве. Экспортируйте резервную копию.')); } }, [data, storageBlocked])
-  useEffect(() => { const app = tg(); app?.ready(); app?.expand(); app?.setHeaderColor?.('#f5f1e5'); app?.setBackgroundColor?.('#f5f1e5') }, [])
+  useEffect(() => { const app = tg(); app?.ready(); app?.expand();  }, [])
   useEffect(() => {
     const initData = tg()?.initData
     if (!initData) return
@@ -166,7 +175,7 @@ export default function App() {
   const templateRows = (limit?: number) => data.templates.slice(0, limit).map(t => <div className="template-row" key={t.id}><div className="template-icon"><Icon name="workout" /></div><div className="grow"><h3>{t.title}</h3><p className="muted">{t.exercises.length} упр. · {t.exercises.reduce((n, e) => n + e.sets, 0)} подходов</p></div>{tab === 'template' && <IconButton icon="edit" label={`Изменить ${t.title}`} onClick={() => setEditing(structuredClone(t))} />}<IconButton icon="arrow" label={`Начать ${t.title}`} onClick={() => start(t)} /></div>)
 
   return <div className="shell">
-    <header className="topbar"><div className="brand"><div className="brandmark"><Icon name="workout" size={22} /></div><div>fittrack<span>.</span></div></div><div className="topright"><span className="storage">{account.status === 'ready' ? account.name : account.status === 'loading' ? 'Вход через Telegram…' : account.status === 'error' ? 'Вход недоступен' : 'Локальный режим'}</span></div></header>
+    <header className="topbar"><div className="brand"><div className="brandmark"><Icon name="workout" size={22} /></div><div>fittrack<span>.</span></div></div><div className="topright"><IconButton icon={theme === 'dark' ? 'sun' : 'moon'} label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} onClick={() => setTheme(value => value === 'dark' ? 'light' : 'dark')} /><span className="storage">{account.status === 'ready' ? account.name : account.status === 'loading' ? 'Вход через Telegram…' : account.status === 'error' ? 'Вход недоступен' : 'Локальный режим'}</span></div></header>
     {account.status === 'local' && <div className="account-info"><span>Данные на этом устройстве.</span>{import.meta.env.VITE_TELEGRAM_BOT_URL && <a href={import.meta.env.VITE_TELEGRAM_BOT_URL} target="_blank" rel="noreferrer">Открыть бота ↗</a>}</div>}
     {(error || storageError) && <div role="alert" className="notice error">{error || storageError}</div>}
     {message && <div role="status" className="notice">{message}</div>}
